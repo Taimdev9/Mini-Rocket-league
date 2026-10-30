@@ -1,66 +1,132 @@
-* { margin:0; padding:0; box-sizing:border-box; touch-action:none;
-    -webkit-tap-highlight-color:transparent; user-select:none;
-    -webkit-user-select:none; }
-html, body { width:100%; height:100%; overflow:hidden; background:#0a0f1e;
-             font-family: system-ui, sans-serif; }
-canvas { display:block; }
-
-#hud {
-  position:fixed; top:0; left:0; right:0; padding:12px 18px;
-  padding-top: calc(12px + env(safe-area-inset-top));
-  display:flex; justify-content:space-between; align-items:center;
-  color:#fff; font-size:16px; font-weight:bold;
-  text-shadow: 0 2px 8px rgba(0,0,0,.8); pointer-events:none;
-  z-index: 10;
+* {
+  margin: 0; padding: 0; box-sizing: border-box;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none;
 }
 
-#controls { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
-.btn {
-  position: absolute; pointer-events: auto;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-weight: 900; font-size: 26px;
-  border-radius: 50%;
-  background: rgba(76, 201, 240, 0.15);
-  border: 2px solid rgba(76, 201, 240, 0.6);
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: #0a0f1e;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+canvas { display: block; }
+
+/* ============ HUD ============ */
+#hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top));
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px;
+  color: #fff; font-size: 15px; font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0,0,0,.9);
+  pointer-events: none; z-index: 10;
+}
+.hud-item {
+  background: rgba(10, 15, 30, 0.55);
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(76, 201, 240, 0.25);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  box-shadow: 0 0 18px rgba(76, 201, 240, 0.35), inset 0 0 12px rgba(76, 201, 240, 0.2);
-  transition: transform .08s ease, background .08s ease;
+  white-space: nowrap;
 }
-.btn:active, .btn.pressed {
-  background: rgba(76, 201, 240, 0.55);
-  transform: scale(0.92);
+#gamepadStatus {
+  font-size: 12px; opacity: 0.85;
 }
-.btn-left  { width: 82px; height: 82px; left: 18px;  bottom: calc(28px + env(safe-area-inset-bottom)); }
-.btn-right { width: 82px; height: 82px; left: 118px; bottom: calc(28px + env(safe-area-inset-bottom)); }
-.btn-brake {
-  width: 78px; height: 78px; right: 18px;
-  bottom: calc(32px + env(safe-area-inset-bottom));
-  font-size: 15px;
-  background: rgba(255, 61, 92, 0.15);
-  border-color: rgba(255, 61, 92, 0.65);
-  box-shadow: 0 0 18px rgba(255, 61, 92, 0.35), inset 0 0 12px rgba(255, 61, 92, 0.2);
-}
-.btn-brake:active, .btn-brake.pressed { background: rgba(255, 61, 92, 0.55); }
-.btn-boost {
-  width: 92px; height: 92px; right: 106px;
-  bottom: calc(28px + env(safe-area-inset-bottom));
-  font-size: 14px;
-  background: rgba(255, 209, 102, 0.15);
-  border-color: rgba(255, 209, 102, 0.75);
-  box-shadow: 0 0 20px rgba(255, 209, 102, 0.4), inset 0 0 12px rgba(255, 209, 102, 0.25);
-}
-.btn-boost:active, .btn-boost.pressed { background: rgba(255, 209, 102, 0.55); }
 
+/* ============ شريط البوست ============ */
 #boostBar {
-  position: fixed; right: calc(18px + env(safe-area-inset-right));
-  bottom: calc(122px + env(safe-area-inset-bottom));
-  width: 92px; height: 8px; border-radius: 8px;
-  background: rgba(255,255,255,0.15); overflow: hidden;
+  position: fixed;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(130px + env(safe-area-inset-bottom));
+  width: 90px; height: 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  overflow: hidden;
   z-index: 20; pointer-events: none;
 }
 #boostFill {
   height: 100%; width: 100%;
   background: linear-gradient(90deg, #ffd166, #ffb020);
+  box-shadow: 0 0 10px rgba(255, 209, 102, 0.8);
   transition: width .1s linear;
+}
+
+/* ============ مجموعات التحكم ============ */
+#controls { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+
+.dpad-group {
+  position: absolute;
+  left: calc(20px + env(safe-area-inset-left));
+  bottom: calc(30px + env(safe-area-inset-bottom));
+  display: flex; gap: 14px;
+  pointer-events: none;
+}
+
+.action-group {
+  position: absolute;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(30px + env(safe-area-inset-bottom));
+  display: flex; align-items: flex-end; gap: 16px;
+  pointer-events: none;
+}
+
+/* ============ الأزرار ============ */
+.btn {
+  pointer-events: auto;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 900; font-size: 28px;
+  border-radius: 50%;
+  background: rgba(76, 201, 240, 0.12);
+  border: 2px solid rgba(76, 201, 240, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 0 20px rgba(76, 201, 240, 0.3),
+    inset 0 0 14px rgba(76, 201, 240, 0.15);
+  transition: transform .08s ease, background .08s ease, box-shadow .08s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.btn:active, .btn.pressed {
+  background: rgba(76, 201, 240, 0.6);
+  transform: scale(0.9);
+  box-shadow: 0 0 30px rgba(76, 201, 240, 0.75);
+}
+
+.dpad-btn {
+  width: 76px; height: 76px;
+  font-size: 28px;
+}
+
+.btn-brake {
+  width: 72px; height: 72px;
+  font-size: 26px;
+  background: rgba(255, 61, 92, 0.12);
+  border-color: rgba(255, 61, 92, 0.6);
+  box-shadow:
+    0 0 20px rgba(255, 61, 92, 0.3),
+    inset 0 0 14px rgba(255, 61, 92, 0.15);
+}
+.btn-brake:active, .btn-brake.pressed {
+  background: rgba(255, 61, 92, 0.6);
+  box-shadow: 0 0 30px rgba(255, 61, 92, 0.75);
+}
+
+.btn-boost {
+  width: 86px; height: 86px;
+  font-size: 30px;
+  background: rgba(255, 209, 102, 0.12);
+  border-color: rgba(255, 209, 102, 0.7);
+  box-shadow:
+    0 0 22px rgba(255, 209, 102, 0.35),
+    inset 0 0 16px rgba(255, 209, 102, 0.2);
+}
+.btn-boost:active, .btn-boost.pressed {
+  background: rgba(255, 209, 102, 0.6);
+  box-shadow: 0 0 32px rgba(255, 209, 102, 0.85);
 }
