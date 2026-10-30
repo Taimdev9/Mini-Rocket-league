@@ -1,0 +1,66 @@
+* { margin:0; padding:0; box-sizing:border-box; touch-action:none;
+    -webkit-tap-highlight-color:transparent; user-select:none;
+    -webkit-user-select:none; }
+html, body { width:100%; height:100%; overflow:hidden; background:#0a0f1e;
+             font-family: system-ui, sans-serif; }
+canvas { display:block; }
+
+#hud {
+  position:fixed; top:0; left:0; right:0; padding:12px 18px;
+  padding-top: calc(12px + env(safe-area-inset-top));
+  display:flex; justify-content:space-between; align-items:center;
+  color:#fff; font-size:16px; font-weight:bold;
+  text-shadow: 0 2px 8px rgba(0,0,0,.8); pointer-events:none;
+  z-index: 10;
+}
+
+#controls { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+.btn {
+  position: absolute; pointer-events: auto;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 900; font-size: 26px;
+  border-radius: 50%;
+  background: rgba(76, 201, 240, 0.15);
+  border: 2px solid rgba(76, 201, 240, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 0 18px rgba(76, 201, 240, 0.35), inset 0 0 12px rgba(76, 201, 240, 0.2);
+  transition: transform .08s ease, background .08s ease;
+}
+.btn:active, .btn.pressed {
+  background: rgba(76, 201, 240, 0.55);
+  transform: scale(0.92);
+}
+.btn-left  { width: 82px; height: 82px; left: 18px;  bottom: calc(28px + env(safe-area-inset-bottom)); }
+.btn-right { width: 82px; height: 82px; left: 118px; bottom: calc(28px + env(safe-area-inset-bottom)); }
+.btn-brake {
+  width: 78px; height: 78px; right: 18px;
+  bottom: calc(32px + env(safe-area-inset-bottom));
+  font-size: 15px;
+  background: rgba(255, 61, 92, 0.15);
+  border-color: rgba(255, 61, 92, 0.65);
+  box-shadow: 0 0 18px rgba(255, 61, 92, 0.35), inset 0 0 12px rgba(255, 61, 92, 0.2);
+}
+.btn-brake:active, .btn-brake.pressed { background: rgba(255, 61, 92, 0.55); }
+.btn-boost {
+  width: 92px; height: 92px; right: 106px;
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  font-size: 14px;
+  background: rgba(255, 209, 102, 0.15);
+  border-color: rgba(255, 209, 102, 0.75);
+  box-shadow: 0 0 20px rgba(255, 209, 102, 0.4), inset 0 0 12px rgba(255, 209, 102, 0.25);
+}
+.btn-boost:active, .btn-boost.pressed { background: rgba(255, 209, 102, 0.55); }
+
+#boostBar {
+  position: fixed; right: calc(18px + env(safe-area-inset-right));
+  bottom: calc(122px + env(safe-area-inset-bottom));
+  width: 92px; height: 8px; border-radius: 8px;
+  background: rgba(255,255,255,0.15); overflow: hidden;
+  z-index: 20; pointer-events: none;
+}
+#boostFill {
+  height: 100%; width: 100%;
+  background: linear-gradient(90deg, #ffd166, #ffb020);
+  transition: width .1s linear;
+}
