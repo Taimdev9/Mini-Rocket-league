@@ -3,13 +3,15 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { createArena, ARENA } from './arena.js';
 import { createCar, updateCar, carState } from './car.js';
 import { initPhysics, physicsState } from './physics.js';
+import { setupEffects } from './effects.js';
+import { initGamepad, pollGamepad, gamepadState } from './gamepad.js';
+import { initUI, inputState, updateBoostBar } from './ui.js';
 
 // ============================================================
-// 1. إعداد المشهد (Scene)
+// 1. المشهد
 // ============================================================
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0f1e);
-scene.fog = new THREE.Fog(0x0a0f1e, 150, 400);
 
 // ============================================================
 // 2. الكاميرا
@@ -34,19 +36,9 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 // ============================================================
-// 4. الإضاءة
+// 4. الإضاءة والسماء والمؤثرات
 // ============================================================
-scene.add(new THREE.HemisphereLight(0xffffff, 0x223355, 1.2));
-
-const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-dirLight.position.set(60, 100, 40);
-dirLight.castShadow = true;
-dirLight.shadow.mapSize.set(1024, 1024);
-dirLight.shadow.camera.left = -150;
-dirLight.shadow.camera.right = 150;
-dirLight.shadow.camera.top = 150;
-dirLight.shadow.camera.bottom = -150;
-scene.add(dirLight);
+setupEffects(scene);
 
 // ============================================================
 // 5. بناء الملعب
@@ -57,10 +49,10 @@ createArena(scene);
 // 6. بدء التشغيل
 // ============================================================
 async function start() {
-  // --- الفيزياء والكرة ---
+  // --- الفيزياء ---
   await initPhysics(ARENA);
 
-  // ✅ إضافة الكرة للمشهد (تم نقلها من physics.js إلى هنا)
+  // --- إضافة الكرة للمشهد ---
   if (physicsState.ballMesh) {
     scene.add(physicsState.ballMesh);
   }
@@ -68,56 +60,15 @@ async function start() {
   // --- السيارة ---
   createCar(scene);
 
-  // ============================================================
-  // 7. التحكم
-  // ============================================================
-  const input = {
-    steerLeft: false,
-    steerRight: false,
-    brake: false,
-    boost: false,
-    boostEnergy: 100,
-    maxBoost: 100,
-    boostDrain: 45,
-    boostRegen: 12
-  };
-
-  function bindButton(id, onPress, onRelease) {
-    const el = document.getElementById(id);
-    if (!el) {
-      console.warn('زر غير موجود:', id);
-      return;
-    }
-    const press = (e) => {
-      e.preventDefault();
-      el.classList.add('pressed');
-      onPress();
-    };
-    const release = () => {
-      el.classList.remove('pressed');
-      onRelease();
-    };
-    el.addEventListener('touchstart', press, { passive: false });
-    el.addEventListener('mousedown', press);
-    document.addEventListener('touchend', release, { passive: false });
-    document.addEventListener('mouseup', release);
-  }
-
-  bindButton('btnLeft',  () => input.steerLeft = true,  () => input.steerLeft = false);
-  bindButton('btnRight', () => input.steerRight = true, () => input.steerRight = false);
-  bindButton('btnBrake', () => input.brake = true,      () => input.brake = false);
-  bindButton('btnBoost', () => input.boost = true,      () => input.boost = false);
-
-  // كيبورد للتجربة على الكمبيوتر
-  const keys = {};
-  window.addEventListener('keydown', e => keys[e.code] = true);
-  window.addEventListener('keyup', e => keys[e.code] = false);
+  // --- واجهة المستخدم ويد التحكم ---
+  initUI();
+  initGamepad();
 
   // ============================================================
-  // 8. الحلقة الرئيسية
+  // 7. الحلقة الرئيسية
   // ============================================================
   const speedEl = document.getElementById('speed');
-  const boostFill = document.getElementById('boostFill');
+  const gpStatus = document.getElementById('gamepadStatus');
 
   let lastTime = performance.now();
 
@@ -128,24 +79,44 @@ async function start() {
     const dt = Math.min((now - lastTime) / 1000, 0.05);
     lastTime = now;
 
-    // --- دمج المدخلات ---
+    // --- استطلاع يد التحكم ---
+    pollGamepad();
+
+    // ============================================================
+    // دمج المدخلات: أزرار + كونسول
+    // ============================================================
     let steer = 0;
-    if (input.steerLeft  || keys['ArrowLeft']  || keys['KeyA']) steer -= 1;
-    if (input.steerRight || keys['ArrowRight'] || keys['KeyD']) steer += 1;
+    if (inputState.steerLeft) steer -= 1;
+    if (inputState.steerRight) steer += 1;
 
-    const braking = input.brake || keys['ArrowDown'] || keys['KeyS'];
-    let boosting = input.boost || keys['Space'] || keys['ShiftLeft'];
+    // إذا الكونسول يعطي إشارة أقوى، نأخذ بها
+    if (gamepadState.connected && Math.abs(gamepadState.steer) > Math.abs(steer)) {
+      steer = gamepadState.steer;
+    }
 
-    // --- طاقة البوست ---
-    if (boosting && input.boostEnergy > 0) {
-      input.boostEnergy = Math.max(0, input.boostEnergy - input.boostDrain * dt);
+    const braking = inputState.brake || gamepadState.brake;
+    let boosting = inputState.boost || gamepadState.boost;
+
+    // ============================================================
+    // طاقة البوست
+    // ============================================================
+    if (boosting && inputState.boostEnergy > 0) {
+      inputState.boostEnergy = Math.max(
+        0,
+        inputState.boostEnergy - inputState.boostDrain * dt
+      );
     } else {
       boosting = false;
-      input.boostEnergy = Math.min(input.maxBoost, input.boostEnergy + input.boostRegen * dt);
+      inputState.boostEnergy = Math.min(
+        inputState.maxBoost,
+        inputState.boostEnergy + inputState.boostRegen * dt
+      );
     }
-    if (boostFill) boostFill.style.width = input.boostEnergy + '%';
+    updateBoostBar();
 
-    // --- تحديث السيارة ---
+    // ============================================================
+    // تحديث السيارة
+    // ============================================================
     let speedKmh = 0;
     try {
       speedKmh = updateCar(dt, steer, braking, boosting, carState, physicsState);
@@ -153,15 +124,21 @@ async function start() {
       console.error('خطأ في updateCar:', err);
     }
 
-    // --- خطوة الفيزياء ---
+    // ============================================================
+    // خطوة الفيزياء
+    // ============================================================
     if (physicsState.world) {
       physicsState.world.step();
     }
 
-    // --- مزامنة السيارة مع الفيزياء ---
+    // ============================================================
+    // مزامنة السيارة
+    // ============================================================
     if (carState.syncVisual) carState.syncVisual();
 
-    // --- مزامنة الكرة ---
+    // ============================================================
+    // مزامنة الكرة
+    // ============================================================
     if (physicsState.ballMesh && physicsState.ballBody) {
       const bp = physicsState.ballBody.translation();
       const bq = physicsState.ballBody.rotation();
@@ -169,10 +146,20 @@ async function start() {
       physicsState.ballMesh.quaternion.set(bq.x, bq.y, bq.z, bq.w);
     }
 
-    // --- عرض السرعة ---
-    if (speedEl) speedEl.textContent = Math.round(speedKmh) + ' km/h';
+    // ============================================================
+    // HUD
+    // ============================================================
+    if (speedEl) {
+      speedEl.textContent = Math.round(speedKmh) + ' km/h';
+    }
+    if (gpStatus) {
+      gpStatus.textContent = gamepadState.connected ? '🎮 متصل' : '🎮 غير متصل';
+      gpStatus.style.color = gamepadState.connected ? '#4cc9f0' : '#8899bb';
+    }
 
-    // --- الكاميرا تتبع السيارة ---
+    // ============================================================
+    // الكاميرا تتبع السيارة
+    // ============================================================
     if (carState.body) {
       const cp = carState.body.translation();
       const cq = carState.body.rotation();
@@ -187,14 +174,16 @@ async function start() {
       camera.lookAt(carPos.x, carPos.y + 2, carPos.z + 5);
     }
 
-    // --- الرندر ---
+    // ============================================================
+    // الرندر
+    // ============================================================
     renderer.render(scene, camera);
   }
 
   animate();
 
   // ============================================================
-  // 9. إعادة الكرة إذا خرجت من الملعب
+  // 8. إعادة الكرة إذا خرجت
   // ============================================================
   setInterval(() => {
     if (!physicsState.ballBody) return;
@@ -207,7 +196,7 @@ async function start() {
   }, 1000);
 
   // ============================================================
-  // 10. إعادة الحجم عند تغيير الشاشة
+  // 9. تغيير الحجم
   // ============================================================
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -217,7 +206,7 @@ async function start() {
 }
 
 // ============================================================
-// تشغيل اللعبة
+// تشغيل
 // ============================================================
 start().catch(err => {
   console.error('فشل بدء اللعبة:', err);
