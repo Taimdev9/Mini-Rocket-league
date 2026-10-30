@@ -18,17 +18,25 @@
 <body>
 
 <div id="hud">
-  <div>🚗 FENNEC</div>
-  <div id="speed">0 km/h</div>
+  <div class="hud-item">🚗 FENNEC</div>
+  <div class="hud-item" id="speed">0 km/h</div>
+  <div class="hud-item" id="gamepadStatus">🎮 غير متصل</div>
 </div>
 
 <div id="boostBar"><div id="boostFill"></div></div>
 
 <div id="controls">
-  <div class="btn btn-left"  id="btnLeft">◀</div>
-  <div class="btn btn-right" id="btnRight">▶</div>
-  <div class="btn btn-brake" id="btnBrake">فرامل</div>
-  <div class="btn btn-boost" id="btnBoost">BOOST</div>
+  <!-- يسار: تحكم -->
+  <div class="dpad-group">
+    <div class="btn dpad-btn" id="btnLeft">◀</div>
+    <div class="btn dpad-btn" id="btnRight">▶</div>
+  </div>
+
+  <!-- يمين: فرامل + بوست -->
+  <div class="action-group">
+    <div class="btn btn-brake" id="btnBrake">🛑</div>
+    <div class="btn btn-boost" id="btnBoost">⚡</div>
+  </div>
 </div>
 
 <script type="module" src="main.js"></script>
