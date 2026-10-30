@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Rocket Mobile - Fennec</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+    "@dimforge/rapier3d-compat": "https://cdn.skypack.dev/@dimforge/rapier3d-compat@0.11.2"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="hud">
+  <div>🚗 FENNEC</div>
+  <div id="speed">0 km/h</div>
+</div>
+
+<div id="boostBar"><div id="boostFill"></div></div>
+
+<div id="controls">
+  <div class="btn btn-left"  id="btnLeft">◀</div>
+  <div class="btn btn-right" id="btnRight">▶</div>
+  <div class="btn btn-brake" id="btnBrake">فرامل</div>
+  <div class="btn btn-boost" id="btnBoost">BOOST</div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
